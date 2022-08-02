@@ -76,8 +76,7 @@ for test in (
 	'a!.b',
 	'a.b.c!.d',
 ):
-	del_store_import_tests.append(f'del {test}')
-	del_store_import_tests.append(f'{test} = 1')
+	del_store_import_tests.extend((f'del {test}', f'{test} = 1'))
 
 @py.test.mark.parametrize('test', del_store_import_tests)
 def test_del_store_import(test):
@@ -88,8 +87,7 @@ for test in (
 	'a!',
 	'a.b!',
 ):
-	invalid_del_store_import_tests.append(f'del {test}')
-	invalid_del_store_import_tests.append(f'{test} = 1')
+	invalid_del_store_import_tests.extend((f'del {test}', f'{test} = 1'))
 
 @py.test.mark.parametrize('test', invalid_del_store_import_tests)
 def test_invalid_del_store_import(test):

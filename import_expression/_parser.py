@@ -33,10 +33,7 @@ def find_imports(root_node, **kwargs):
 
 def remove_string_right(haystack, needle):
 	left, needle, right = haystack.rpartition(needle)
-	if not right:
-		return left
-	# needle not found
-	return haystack
+	return haystack if right else left
 
 def remove_import_op(name): return remove_string_right(name, MARKER)
 def has_any_import_op(name): return MARKER in name
@@ -61,24 +58,21 @@ class Transformer(ast.NodeTransformer):
 		"""
 		self._ensure_only_valid_import_ops(node)
 
-		maybe_transformed = self._transform_attribute_attr(node)
-		if maybe_transformed:
+		if maybe_transformed := self._transform_attribute_attr(node):
 			return maybe_transformed
-		else:
-			transformed_lhs = self.visit(node.value)
-			return ast.copy_location(
-				ast.Attribute(
-					value=transformed_lhs,
-					ctx=node.ctx,
-					attr=node.attr),
-				node)
+		transformed_lhs = self.visit(node.value)
+		return ast.copy_location(
+			ast.Attribute(
+				value=transformed_lhs,
+				ctx=node.ctx,
+				attr=node.attr),
+			node)
 
 	def visit_Name(self, node):
 		"""convert solitary Names that have import expressions, such as "a!", into import calls"""
 		self._ensure_only_valid_import_ops(node)
 
-		id = find_valid_imported_name(node.id)
-		if id:
+		if id := find_valid_imported_name(node.id):
 			return ast.copy_location(self.import_call(id, node.ctx), node)
 		return node
 
@@ -117,18 +111,14 @@ class Transformer(ast.NodeTransformer):
 		lhs = self.attribute_source(node.value, _seen_import_op)
 		rhs = stripped
 
-		return lhs + '.' + rhs
+		return f'{lhs}.{rhs}'
 
 	def visit_def_(self, node):
 		if not has_any_import_op(node.name):
 			# it's valid so far, just ensure that arguments and body are also visited
 			return self.generic_visit(node)
 
-		if isinstance(node, ast.ClassDef):
-			type_name = 'class'
-		else:
-			type_name = 'function'
-
+		type_name = 'class' if isinstance(node, ast.ClassDef) else 'function'
 		raise self._syntax_error(
 			f'"{IMPORT_OP}" not allowed in the name of a {type_name}',
 			node
@@ -179,19 +169,14 @@ class Transformer(ast.NodeTransformer):
 
 	@classmethod
 	def _for_any_child_node_string(cls, predicate, node):
-		for child_node in ast.walk(node):
-			if cls._for_any_node_string(predicate, node):
-				return True
-
-		return False
+		return any(cls._for_any_node_string(predicate, node) for _ in ast.walk(node))
 
 	@staticmethod
 	def _for_any_node_string(predicate, node):
-		for field, value in ast.iter_fields(node):
-			if isinstance(value, str) and predicate(value):
-				return True
-
-		return False
+		return any(
+			isinstance(value, str) and predicate(value)
+			for field, value in ast.iter_fields(node)
+		)
 
 	def _call_on_name_or_attribute(func):
 		def checker(self, node):

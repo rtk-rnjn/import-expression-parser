@@ -22,10 +22,7 @@ def decode(b, errors='strict'):
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
 	def _buffer_decode(self, input, errors, final):
-		if final:
-			return decode(input, errors)
-		else:
-			return '', 0
+		return decode(input, errors) if final else ('', 0)
 
 class StreamReader(utf_8.StreamReader):  # pragma: no cover
 	"""decode is deferred to support better error messages"""

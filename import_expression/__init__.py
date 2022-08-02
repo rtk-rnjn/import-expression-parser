@@ -118,7 +118,7 @@ def update_globals(globals: dict) -> dict:
 
 	This function always returns the passed dictionary to make expression chaining easier.
 	"""
-	globals.update({constants.IMPORTER: _importlib.import_module})
+	globals[constants.IMPORTER] = _importlib.import_module
 	return globals
 
 def _parse_eval_exec_args(globals, locals):

@@ -69,7 +69,9 @@ class Untokenizer:
 		row, col = start
 		if row < self.prev_row or row == self.prev_row and col < self.prev_col:
 			raise ValueError(
-				"start ({},{}) precedes previous end ({},{})".format(row, col, self.prev_row, self.prev_col))
+				f"start ({row},{col}) precedes previous end ({self.prev_row},{self.prev_col})"
+			)
+
 
 		col_offset = col - self.prev_col
 		self.tokens.append(" " * col_offset)
